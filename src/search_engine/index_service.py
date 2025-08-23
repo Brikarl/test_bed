@@ -6,6 +6,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
 import pandas as pd
 from .index_tab.index_service import InvertedIndexService
+from .index_tab.kg_retrieval_service import KGRetrievalService
 
 
 class IndexService:
@@ -14,8 +15,40 @@ class IndexService:
     def __init__(self, index_file: str = "models/index_data.json"):
         self.index_file = index_file
         self.index_service = InvertedIndexService(index_file)
+        # 确保KGRetrievalService使用Ollama作为默认API配置
+        self.kg_retrieval_service = KGRetrievalService(
+            api_type="ollama",
+            default_model="qwen2.5-coder:latest"
+        )
         self._ensure_index_exists()
-    
+        # 记录预置文档集合，便于导入/清理时保护
+        try:
+            self.core_doc_ids = getattr(self.index_service, 'core_doc_ids', set())
+        except Exception:
+            self.core_doc_ids = set()
+
+    def set_ner_api_config(self,
+                          api_type: str = "ollama",
+                          api_key: Optional[str] = None,
+                          base_url: Optional[str] = None,
+                          default_model: Optional[str] = None):
+        """
+        设置NER服务的API配置
+
+        Args:
+            api_type: API类型 ("ollama" 或 "openai")
+            api_key: API密钥
+            base_url: API基础URL
+            default_model: 默认模型名称
+        """
+        # 重新初始化知识图谱检索服务
+        self.kg_retrieval_service = KGRetrievalService(
+            api_type=api_type,
+            api_key=api_key,
+            base_url=base_url,
+            default_model=default_model
+        )
+
     def _ensure_index_exists(self):
         """确保索引存在，如果不存在则构建"""
         if not os.path.exists(self.index_file):
@@ -69,22 +102,33 @@ class IndexService:
         """获取文档内容"""
         return self.index_service.get_document(doc_id)
     
-    def search(self, query: str, top_k: int = 20) -> List[Tuple[str, float, str]]:
-        """搜索文档"""
+    def search(self, query: str, top_k: int = 10, retrieval_mode: str = "tfidf") -> List[Tuple[str, float, str]]:
+        """
+        搜索文档
+
+        Args:
+            query: 查询字符串
+            top_k: 返回结果数量
+            retrieval_mode: 检索模式，目前只支持 'tfidf'
+
+        Returns:
+            List[Tuple[str, float, str]]: (doc_id, score, reason)
+        """
+        # 目前只支持TF-IDF检索
         return self.index_service.search(query, top_k)
     
     def retrieve(self, query: str, top_k: int = 20) -> List[str]:
         """检索文档ID列表"""
         return self.index_service.search_doc_ids(query, top_k)
     
-    def rank(self, query: str, doc_ids: List[str], top_k: int = 10, sort_mode: str = "tfidf") -> List[Tuple[str, float, str]]:
+    def rank(self, query: str, doc_ids: List[str], top_k: int = 10, sort_mode: str = "tfidf", model_type: Optional[str] = None) -> List[Tuple[str, float, str]]:
         """对文档进行排序，支持TF-IDF和CTR排序模式"""
         if not doc_ids:
             return []
         
-        # 获取所有文档的搜索结果
-        all_results = self.search(query, top_k=len(doc_ids))
-        
+        # 直接使用底层索引服务搜索，避免重复调用
+        all_results = self.index_service.search(query, top_k=max(len(doc_ids), 50))
+
         # 过滤出指定doc_ids的结果
         filtered_results = []
         for result in all_results:
@@ -103,6 +147,9 @@ class IndexService:
                 
                 # 计算CTR分数
                 ctr_results = []
+                from datetime import datetime
+                current_timestamp = datetime.now().isoformat()
+
                 for position, (doc_id, tfidf_score, summary) in enumerate(filtered_results, 1):
                     # 准备特征
                     features = {
@@ -110,12 +157,13 @@ class IndexService:
                         'doc_id': doc_id,
                         'position': position,
                         'score': tfidf_score,
-                        'summary': summary
+                        'summary': summary,
+                        'timestamp': current_timestamp  # 添加当前时间戳
                     }
                     
-                    # 预测CTR
-                    ctr_score = model_service.predict_ctr(features)
-                    
+                    # 预测CTR，使用指定的模型类型
+                    ctr_score = model_service.predict_ctr(features, model_type)
+
                     # 返回4元组: (doc_id, tfidf_score, ctr_score, summary)
                     ctr_results.append((doc_id, tfidf_score, ctr_score, summary))
                 
@@ -290,28 +338,72 @@ class IndexService:
         except Exception as e:
             return None, f"❌ 导出文档失败: {str(e)}"
     
+    # 知识图谱相关方法
+    def build_knowledge_graph(self, model: Optional[str] = None) -> Dict[str, Any]:
+        """构建知识图谱"""
+        documents = self.get_all_documents()
+        if not documents:
+            return {"error": "没有文档可用于构建知识图谱"}
+
+        return self.kg_retrieval_service.build_knowledge_graph(documents, model)
+
+    def rebuild_knowledge_graph(self, model: Optional[str] = None) -> Dict[str, Any]:
+        """重新构建知识图谱"""
+        documents = self.get_all_documents()
+        if not documents:
+            return {"error": "没有文档可用于构建知识图谱"}
+
+        return self.kg_retrieval_service.rebuild_knowledge_graph(documents, model)
+
+    def get_knowledge_graph_stats(self) -> Dict[str, Any]:
+        """获取知识图谱统计信息"""
+        return self.kg_retrieval_service.get_graph_stats()
+
+    def query_entity_relations(self, entity_name: str) -> Dict[str, Any]:
+        """
+        查询实体的相关实体和关系
+
+        Args:
+            entity_name: 实体名称
+            
+        Returns:
+            Dict: 实体关系信息
+        """
+        return self.kg_retrieval_service.query_entity_relations(entity_name)
+
+    def search_entities(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        搜索实体
+
+        Args:
+            query: 搜索查询
+            limit: 返回数量限制
+
+        Returns:
+            List[Dict]: 实体列表
+        """
+        return self.kg_retrieval_service.search_entities(query, limit)
+
+    def get_entity_info(self, entity_name: str) -> Dict[str, Any]:
+        """获取实体详细信息"""
+        return self.kg_retrieval_service.get_entity_info(entity_name)
+
+    def export_knowledge_graph(self) -> Tuple[Optional[str], str]:
+        """导出知识图谱"""
+        return self.kg_retrieval_service.export_graph()
+
+    def clear_knowledge_graph(self) -> str:
+        """清空知识图谱"""
+        return self.kg_retrieval_service.clear_graph()
+
+    def get_graph_visualization_data(self) -> Dict[str, Any]:
+        """获取图谱可视化数据"""
+        return self.kg_retrieval_service.get_graph_visualization_data()
+
+    def analyze_query_entities(self, query: str, model: Optional[str] = None) -> Dict[str, Any]:
+        """分析查询中的实体"""
+        return self.kg_retrieval_service.analyze_query_entities(query, model)
+
     def import_documents(self, file_path: str) -> str:
-        """导入文档"""
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                import_data = json.load(f)
-            
-            if not isinstance(import_data, dict):
-                return "❌ 文件格式错误"
-            
-            documents = import_data.get("documents", {})
-            if not isinstance(documents, dict):
-                return "❌ 文档数据格式错误"
-            
-            if not documents:
-                return "❌ 没有文档数据"
-            
-            # 清空现有索引并导入新文档
-            self.clear_index()
-            success_count = self.batch_add_documents(documents)
-            self.save_index()
-            
-            return f"✅ 文档导入成功！\n导入文档数: {success_count}\n总文档数: {len(documents)}"
-            
-        except Exception as e:
-            return f"❌ 导入文档失败: {str(e)}" 
+        """导入文档 - 已禁用"""
+        return "⚠️ 文档导入功能已禁用"

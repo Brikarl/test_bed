@@ -6,6 +6,8 @@ from .index_tab import build_index_tab
 from .search_tab import build_search_tab
 from .training_tab import build_training_tab
 from .monitoring_tab import build_monitoring_tab
+from .rag_tab import build_rag_tab
+from .image_tab.image_tab import build_image_tab
 from .service_manager import service_manager
 
 class SearchUI:
@@ -18,6 +20,7 @@ class SearchUI:
         self.data_service = self.service_manager.data_service
         self.index_service = self.service_manager.index_service
         self.model_service = self.service_manager.model_service
+        self.image_service = self.service_manager.image_service
         
         self.current_query = ""
         self.setup_ui()
@@ -31,11 +34,15 @@ class SearchUI:
             - **数据服务 (DataService)**: CTR事件收集、样本状态管理
             - **索引服务 (IndexService)**: 索引构建、文档管理、检索功能
             - **模型服务 (ModelService)**: 模型训练、配置管理、模型文件
+            - **上下文工程服务 (RAGService)**: 直连LLM / 检索增强 / 多步推理 (Ollama)
+            - **图片服务 (ImageService)**: 基于CLIP的图片检索，支持图搜图和文搜图
             
             ## 📊 服务状态
             - 数据服务: ✅ 运行中
             - 索引服务: ✅ 运行中
             - 模型服务: ✅ 运行中
+            - 上下文工程服务: ✅ 运行中 (需要Ollama支持)
+            - 图片服务: ✅ 运行中 (基于CLIP模型)
             """)
             
             with gr.Tabs():
@@ -43,7 +50,11 @@ class SearchUI:
                     build_index_tab(self.index_service)
                 with gr.Tab("🔍 第二部分：在线召回排序"):
                     build_search_tab(self.index_service, self.data_service)
-                with gr.Tab("📊 第三部分：数据回收训练"):
+                with gr.Tab("🤖 第三部分：上下文工程"):
+                    build_rag_tab(self.index_service)
+                with gr.Tab("🖼️ 第四部分：图片检索系统"):
+                    build_image_tab(self.image_service)
+                with gr.Tab("📊 第五部分：数据回收训练"):
                     build_training_tab(self.model_service, self.data_service)
                 with gr.Tab("🛡️ 系统监控"):
                     build_monitoring_tab(self.data_service, self.index_service, self.model_service)
@@ -59,6 +70,9 @@ class SearchUI:
             print(f"🤖 模型服务状态: 运行中 (已训练模型)")
         else:
             print(f"🤖 模型服务状态: 运行中 (未训练)")
+        
+        image_stats = self.image_service.get_stats()
+        print(f"🖼️ 图片服务状态: 运行中 (共{image_stats['total_images']}张图片，{image_stats['model_device']}设备)")
         
         try:
             self.interface.launch(share=False, inbrowser=True, server_port=port)

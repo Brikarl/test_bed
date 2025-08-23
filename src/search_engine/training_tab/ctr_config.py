@@ -134,6 +134,54 @@ class CTRFeatureConfig:
         """获取特征归一化配置"""
         return cls.FEATURE_SCALING.copy()
 
+class CTRModelConfig:
+    """CTR模型配置类"""
+
+    # 支持的模型类型
+    SUPPORTED_MODELS = {
+        'logistic_regression': {
+            'name': '逻辑回归 (LR)',
+            'description': '经典线性模型，训练快速，解释性强',
+            'class': 'CTRModel',
+            'module': '.ctr_model',
+            'params': {
+                'C': 1.0,
+                'max_iter': 1000,
+                'random_state': 42
+            }
+        },
+        'wide_and_deep': {
+            'name': 'Wide & Deep',
+            'description': '结合线性模型和深度神经网络，效果更好',
+            'class': 'WideAndDeepCTRModel',
+            'module': '.ctr_wide_deep_model',
+            'params': {
+                'epochs': 20,
+                'batch_size': 32,
+                'learning_rate': 0.001,
+                'dropout_rate': 0.2
+            }
+        }
+    }
+
+    # 默认模型
+    DEFAULT_MODEL = 'logistic_regression'
+
+    @classmethod
+    def get_supported_models(cls) -> Dict[str, Dict[str, Any]]:
+        """获取支持的模型列表"""
+        return cls.SUPPORTED_MODELS.copy()
+
+    @classmethod
+    def get_model_config(cls, model_type: str) -> Dict[str, Any]:
+        """获取指定模型的配置"""
+        return cls.SUPPORTED_MODELS.get(model_type, {})
+
+    @classmethod
+    def get_model_names(cls) -> List[str]:
+        """获取模型名称列表"""
+        return [(k, v['name']) for k, v in cls.SUPPORTED_MODELS.items()]
+
 class CTRTrainingConfig:
     """CTR训练配置类"""
     
@@ -148,7 +196,7 @@ class CTRTrainingConfig:
         'max_iter': 1000,   # 最大迭代次数
         'random_state': 42  # 随机种子
     }
-    
+
     # 评估指标
     EVALUATION_METRICS = ['accuracy', 'precision', 'recall', 'f1', 'auc']
     
@@ -156,7 +204,7 @@ class CTRTrainingConfig:
     def get_model_params(cls) -> Dict[str, Any]:
         """获取模型参数"""
         return cls.MODEL_PARAMS.copy()
-    
+
     @classmethod
     def get_evaluation_metrics(cls) -> List[str]:
         """获取评估指标"""
@@ -165,4 +213,5 @@ class CTRTrainingConfig:
 # 导出配置实例
 ctr_sample_config = CTRSampleConfig()
 ctr_feature_config = CTRFeatureConfig()
-ctr_training_config = CTRTrainingConfig() 
+ctr_model_config = CTRModelConfig()
+ctr_training_config = CTRTrainingConfig()

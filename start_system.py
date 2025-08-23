@@ -12,6 +12,21 @@ import signal
 import time
 import importlib.util
 
+def load_env_file():
+    """加载 .env 文件中的环境变量"""
+    env_file = ".env"
+    if os.path.exists(env_file):
+        print(f"📄 加载环境变量文件: {env_file}")
+        with open(env_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    os.environ[key] = value
+                    print(f"✅ 加载环境变量: {key}")
+    else:
+        print(f"⚠️  环境变量文件不存在: {env_file}")
+
 def print_banner():
     """打印启动横幅"""
     print("=" * 60)
@@ -143,21 +158,27 @@ def build_index_if_needed(current_dir, env):
     print("\n📦 步骤4: 检查索引文件")
     print("-" * 30)
     
+    # 若存在预置文档文件，则优先使用服务层自动加载，无需强制离线构建
+    preloaded_path = os.path.join('data', 'preloaded_documents.json')
     if not os.path.exists('models/index_data.json'):
-        print("📄 索引文件不存在，开始构建...")
-        print("⏳ 这可能需要几分钟时间，请耐心等待...")
-        try:
-            subprocess.run(
-                [sys.executable, "-m", "search_engine.index_tab.offline_index"], 
-                check=True, 
-                cwd=current_dir,
-                env=env
-            )
-            print("✅ 离线索引构建完成")
-        except subprocess.CalledProcessError as e:
-            print(f"❌ 离线索引构建失败: {e}")
-            print("💡 建议: 检查数据文件是否存在，或运行 python -m search_engine.index_tab.offline_index")
-            return False
+        if os.path.exists(preloaded_path):
+            print("📄 检测到预置文档文件，将由服务层在首次初始化时自动加载: data/preloaded_documents.json")
+            print("✅ 跳过离线构建，等待服务层创建索引")
+        else:
+            print("📄 索引文件不存在，开始构建...")
+            print("⏳ 这可能需要几分钟时间，请耐心等待...")
+            try:
+                subprocess.run(
+                    [sys.executable, "-m", "search_engine.index_tab.offline_index"], 
+                    check=True, 
+                    cwd=current_dir,
+                    env=env
+                )
+                print("✅ 离线索引构建完成")
+            except subprocess.CalledProcessError as e:
+                print(f"❌ 离线索引构建失败: {e}")
+                print("💡 建议: 检查数据文件是否存在，或运行 python -m search_engine.index_tab.offline_index")
+                return False
     else:
         print("✅ 索引文件已存在，跳过构建")
     
@@ -199,6 +220,9 @@ def main():
     """主函数"""
     print_banner()
     
+    # 加载环境变量
+    load_env_file()
+    
     # 获取当前目录
     current_dir = os.path.dirname(os.path.abspath(__file__))
     
@@ -212,6 +236,13 @@ def main():
         env['PYTHONPATH'] = src_path + os.pathsep + env['PYTHONPATH']
     else:
         env['PYTHONPATH'] = src_path
+    
+    # 确保 API 密钥环境变量被传递
+    if 'DASHSCOPE_API_KEY' in os.environ:
+        env['DASHSCOPE_API_KEY'] = os.environ['DASHSCOPE_API_KEY']
+        print(f"✅ API密钥已加载: {os.environ['DASHSCOPE_API_KEY'][:15]}...")
+    else:
+        print("⚠️ 未找到 DASHSCOPE_API_KEY 环境变量")
     
     # 执行启动流程
     try:

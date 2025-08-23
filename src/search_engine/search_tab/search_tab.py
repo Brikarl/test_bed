@@ -2,7 +2,7 @@ import gradio as gr
 import pandas as pd
 import uuid
 from datetime import datetime
-from ..training_tab.ctr_config import CTRSampleConfig, ctr_sample_config
+from ..training_tab.ctr_config import CTRSampleConfig, ctr_sample_config, CTRModelConfig
 from ..data_utils import (
     record_search_impression, 
     record_document_click, 
@@ -15,15 +15,15 @@ import re
 # 全局变量用于存储当前request_id
 current_request_id = None
 
-def perform_search(index_service, data_service, query: str, sort_mode: str = "ctr"):
+def perform_search(index_service, data_service, query: str, sort_mode: str = "ctr", model_type: str = "logistic_regression"):
     if not query or not query.strip():
         return [], pd.DataFrame(), ""
     try:
         query_clean = query.strip()
         doc_ids = index_service.retrieve(query_clean, top_k=20)
         
-        # 调用rank方法时传递sort_mode参数
-        ranked = index_service.rank(query_clean, doc_ids, top_k=10, sort_mode=sort_mode)
+        # 调用rank方法时传递sort_mode和model_type参数
+        ranked = index_service.rank(query_clean, doc_ids, top_k=10, sort_mode=sort_mode, model_type=model_type)
         
         # 现在ranked已经是正确排序的结果，不需要再次排序
         final = ranked
@@ -163,12 +163,27 @@ def strip_html_tags(text):
 def build_search_tab(index_service, data_service):
     with gr.Blocks() as search_tab:
         gr.Markdown("""### 🔍 第二部分：在线召回排序""")
-        sort_mode = gr.Dropdown(
-            choices=["tfidf", "ctr"],
-            value="ctr",
-            label="排序算法",
-            info="选择排序算法进行对比实验：TF-IDF/CTR"
-        )
+        
+        with gr.Row():
+            with gr.Column(scale=1):
+                sort_mode = gr.Dropdown(
+                    choices=["tfidf", "ctr"],
+                    value="ctr",
+                    label="排序算法",
+                    info="选择排序算法进行对比实验：TF-IDF/CTR"
+                )
+            with gr.Column(scale=1):
+                # 获取支持的模型
+                model_choices = CTRModelConfig.get_model_names()
+                model_labels = [f"{config['name']}" for config in CTRModelConfig.get_supported_models().values()]
+                model_keys = list(CTRModelConfig.get_supported_models().keys())
+                
+                model_dropdown = gr.Dropdown(
+                    choices=[(label, key) for label, key in zip(model_labels, model_keys)],
+                    value="logistic_regression",
+                    label="CTR模型",
+                    info="选择CTR模型类型（仅CTR排序时生效）"
+                )
         with gr.Row():
             with gr.Column(scale=3):
                 query_input = gr.Textbox(label="实验查询", placeholder="输入测试查询进行检索实验...", lines=1)
@@ -194,8 +209,8 @@ def build_search_tab(index_service, data_service):
         with gr.Accordion("🧪 测试用例", open=False):
             gr.Markdown("""推荐测试查询：人工智能、机器学习、深度学习等""")
         # 检索按钮事件
-        def update_results(query, sort_mode):
-            docs_info, df, request_id = perform_search(index_service, data_service, query, sort_mode)
+        def update_results(query, sort_mode, model_type):
+            docs_info, df, request_id = perform_search(index_service, data_service, query, sort_mode, model_type)
             
             # 转换为 DataFrame 展示格式，根据排序模式显示不同的列
             formatted_results = []
@@ -204,10 +219,17 @@ def build_search_tab(index_service, data_service):
                 
                 if sort_mode == "ctr" and 'ctr_score' in doc:
                     # CTR排序模式：显示CTR分数
+                    # 如果CTR分数很小，使用科学计数法显示
+                    ctr_value = doc['ctr_score']
+                    if ctr_value < 0.0001:
+                        ctr_display = f"{ctr_value:.2e}"  # 科学计数法，如 1.46e-07
+                    else:
+                        ctr_display = f"{ctr_value:.4f}"  # 普通小数格式
+                    
                     formatted_results.append([
                         doc['doc_id'],
                         f"{doc['tfidf_score']:.4f}",
-                        f"{doc['ctr_score']:.4f}",
+                        ctr_display,
                         summary_plain[:100] + ("..." if len(summary_plain) > 100 else "")
                     ])
                 else:
@@ -223,19 +245,20 @@ def build_search_tab(index_service, data_service):
             if sort_mode == "ctr":
                 # 创建CTR模式的DataFrame
                 df_display = pd.DataFrame(formatted_results, columns=["文档ID", "TF-IDF分数", "CTR分数", "摘要"])
-                mode_text = "CTR智能排序"
+                model_name = CTRModelConfig.get_model_config(model_type).get('name', model_type)
+                mode_text = f"CTR智能排序 ({model_name})"
             else:
                 # 创建TF-IDF模式的DataFrame
                 df_display = pd.DataFrame(formatted_results, columns=["文档ID", "TF-IDF分数", "文档长度", "摘要"])
                 mode_text = "TF-IDF传统排序"
             
-            # 显示当前排序模式
+            # 显示当前排序模式和模型
             print(f"🔍 当前排序模式: {mode_text}")
             
             return df_display, df, request_id
         search_btn.click(
             fn=update_results,
-            inputs=[query_input, sort_mode],
+            inputs=[query_input, sort_mode, model_dropdown],
             outputs=[results_df, sample_output, request_id_state]
         )
         search_stats_btn.click(
@@ -244,7 +267,7 @@ def build_search_tab(index_service, data_service):
         )
         query_input.submit(
             fn=update_results,
-            inputs=[query_input, sort_mode],
+            inputs=[query_input, sort_mode, model_dropdown],
             outputs=[results_df, sample_output, request_id_state]
         )
         def refresh_samples(rid):

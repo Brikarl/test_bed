@@ -15,11 +15,11 @@ def read_requirements():
         return [line.strip() for line in fh if line.strip() and not line.startswith("#")]
 
 setup(
-    name="intelligent-search-engine",
+    name="ai-system-testbed",
     version="1.0.0",
-    author="Your Name",
+    author="Tyler",
     author_email="tylerelyt@gmail.com",
-    description="A machine learning-powered intelligent search engine with CTR prediction and MLOps support",
+    description="An advanced AI system testbed featuring search & recommendation, RAG, and image search capabilities",
     long_description=read_readme(),
     long_description_content_type="text/markdown",
     url="https://github.com/tylerelyt/test_bed",
@@ -88,14 +88,16 @@ setup(
     },
     zip_safe=False,
     keywords=[
-        "search engine",
+        "AI testbed",
         "machine learning",
-        "information retrieval",
+        "search engine",
+        "image search",
+        "RAG",
+        "retrieval augmented generation",
         "CTR prediction",
         "MLOps",
-        "natural language processing",
-        "text mining",
-        "ranking",
-        "indexing",
+        "CLIP",
+        "knowledge graph",
+        "multi-modal AI",
     ],
 ) 

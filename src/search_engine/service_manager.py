@@ -9,6 +9,7 @@ from typing import Optional
 from .data_service import DataService
 from .index_service import IndexService
 from .model_service import ModelService
+from .image_service import ImageService
 
 
 class ServiceManager:
@@ -26,6 +27,7 @@ class ServiceManager:
             self._data_service: Optional[DataService] = None
             self._index_service: Optional[IndexService] = None
             self._model_service: Optional[ModelService] = None
+            self._image_service: Optional[ImageService] = None
             self._initialized = True
     
     @property
@@ -52,6 +54,14 @@ class ServiceManager:
             self._model_service = ModelService()
         return self._model_service
     
+    @property
+    def image_service(self) -> ImageService:
+        """获取图片服务实例"""
+        if self._image_service is None:
+            print("🚀 初始化图片服务...")
+            self._image_service = ImageService()
+        return self._image_service
+    
     def get_service_status(self) -> dict:
         """获取所有服务状态"""
         return {
@@ -66,6 +76,10 @@ class ServiceManager:
             'model_service': {
                 'status': 'running' if self._model_service else 'not_initialized',
                 'is_trained': self.model_service.get_model_info()['is_trained'] if self._model_service else False
+            },
+            'image_service': {
+                'status': 'running' if self._image_service else 'not_initialized',
+                'total_images': self.image_service.get_stats()['total_images'] if self._image_service else 0
             }
         }
     
@@ -74,6 +88,7 @@ class ServiceManager:
         self._data_service = None
         self._index_service = None
         self._model_service = None
+        self._image_service = None
         print("🔄 所有服务已重置")
 
 
@@ -93,4 +108,9 @@ def get_index_service() -> IndexService:
 
 def get_model_service() -> ModelService:
     """获取模型服务实例"""
-    return service_manager.model_service 
+    return service_manager.model_service
+
+
+def get_image_service() -> ImageService:
+    """获取图片服务实例"""
+    return service_manager.image_service 

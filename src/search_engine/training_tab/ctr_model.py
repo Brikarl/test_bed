@@ -218,8 +218,9 @@ class CTRModel:
             self.model = LogisticRegression(
                 random_state=42, 
                 max_iter=1000,
-                C=0.1,
-                class_weight='balanced'
+                C=10.0,  # 减少正则化，让模型更灵活
+                class_weight='balanced',  # 平衡类权重，缓解数据不平衡
+                solver='liblinear'  # 对小数据集更友好
             )
             self.model.fit(X_train, y_train)
             y_pred = self.model.predict(X_test)
@@ -355,11 +356,9 @@ class CTRModel:
         if self.is_trained and self.model:
             # 如果没有指定文件路径，使用默认路径
             if filepath is None:
-                # 使用绝对路径，确保在任何目录下都能正确保存
-                current_dir = os.path.dirname(os.path.abspath(__file__))
-                project_root = os.path.dirname(current_dir)
-                filepath = os.path.join(project_root, "models", "ctr_model.pkl")
-            
+                # 统一使用项目根目录的相对路径
+                filepath = os.path.join("models", "ctr_model.pkl")
+
             # 确保目录存在
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
             
@@ -377,11 +376,9 @@ class CTRModel:
         """加载模型"""
         # 如果没有指定文件路径，使用默认路径
         if filepath is None:
-            # 使用绝对路径，确保在任何目录下都能正确加载
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            project_root = os.path.dirname(current_dir)
-            filepath = os.path.join(project_root, "models", "ctr_model.pkl")
-        
+            # 统一使用项目根目录的相对路径
+            filepath = os.path.join("models", "ctr_model.pkl")
+
         if os.path.exists(filepath):
             try:
                 with open(filepath, 'rb') as f:

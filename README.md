@@ -1,223 +1,428 @@
-# 🔍 Intelligent Search Engine
+# 🔬 AI System Testbed
 
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/tylerelyt/test_bed)
 
-一个基于机器学习的智能搜索引擎系统，支持CTR预测、实时排序优化和MLOps流水线。
+An advanced AI-powered search platform featuring three core capabilities: **Search & Recommendation**, **Context Engineering**, and **Image Search**. Built with modern MLOps practices for production-ready deployment.
 
-## 🌟 特性
+## 🌟 Features
 
-### 核心功能
-- **🔍 智能检索**: 基于TF-IDF的倒排索引，支持中文分词
-- **🧠 CTR预测**: 机器学习模型预测点击率，优化搜索排序
-- **⚡ 实时优化**: 实时收集用户行为数据，动态调整排序策略
-- **📊 数据分析**: 完整的用户行为分析和搜索效果统计
+### 🎯 Three Core Capabilities
 
-### 技术特性
-- **🏗️ 微服务架构**: 数据服务、索引服务、模型服务分离
-- **🚀 高性能**: 异步数据保存、智能缓存、批量操作
-- **🛡️ 高可靠性**: 完善的错误处理、数据验证、健康检查
-- **🔧 易扩展**: 标准化接口设计，支持插件化扩展
+#### 1. 🔍 Search & Recommendation System
+- **Intelligent Indexing**: TF-IDF based inverted index with Chinese word segmentation
+- **CTR Prediction**: Advanced machine learning models (Logistic Regression & Wide & Deep) for click-through rate prediction
+- **Real-time Ranking**: Dynamic ranking strategy adjustment based on user behavior
+- **Knowledge Graph**: LLM-based NER technology for enhanced semantic search
+- **A/B Testing**: Experiment management for ranking algorithm comparison
 
-### MLOps支持
-- **📈 实验管理**: A/B测试、模型版本控制
-- **🔄 自动化流水线**: 数据收集→模型训练→部署→监控
-- **📊 监控告警**: 实时性能监控、数据质量检查
-- **🎯 可视化界面**: 基于Gradio的Web界面
+#### 2. 🤖 Context Engineering
+- **Hybrid Retrieval**: Combines inverted index and knowledge graph for comprehensive information retrieval
+- **LLM Integration**: Seamless integration with Ollama for local LLM inference
+- **Prompt Engineering**: Optimized prompt templates with full transparency
+- **Context Management**: Intelligent context selection and ranking for accurate responses
+- **Multi-source Context**: Retrieval from documents, knowledge graphs, and structured data
 
-## 🚀 快速开始
+#### 3. 🖼️ Image Search System
+- **CLIP-powered**: OpenAI CLIP model via Hugging Face Transformers
+- **Multi-modal Search**: Image-to-image and text-to-image search capabilities
+- **Semantic Understanding**: 512-dimensional embedding vectors for precise similarity matching
+- **Real-time Processing**: Sub-second search response with efficient similarity calculation
+- **Scalable Storage**: Unlimited image library with optimized storage management
 
-### 环境要求
+### 🏗️ Shared Infrastructure
+- **Microservice Architecture**: Decoupled services (Data, Index, Model, Image, Experiment)
+- **Unified Service Management**: Centralized service discovery and management
+- **MLOps Pipeline**: Complete workflow from data collection to model deployment
+- **Monitoring & Observability**: Real-time performance tracking and health checks
+- **Web Interface**: Modern Gradio-based UI with responsive design
+- **Production Ready**: Comprehensive error handling, logging, and scalability features
+
+## 📚 Documentation
+
+- Search & Recommendation: [docs/SEARCH_GUIDE.md](docs/SEARCH_GUIDE.md)
+- Context Engineering: [docs/CONTEXT_ENGINEERING_GUIDE.md](docs/CONTEXT_ENGINEERING_GUIDE.md)
+- Image Search: [docs/IMAGE_SEARCH_GUIDE.md](docs/IMAGE_SEARCH_GUIDE.md)
+
+## 🚀 Quick Start
+
+### Requirements
 
 - Python 3.8+
-- 内存: 至少2GB
-- 存储: 至少1GB可用空间
+- Memory: At least 2GB
+- Storage: At least 1GB available space
+- GPU (optional): For better CLIP model performance
 
-### 安装
+### Optional Dependencies
+
+- Ollama (for Context Engineering/KG): local LLM inference service, default at `http://localhost:11434`
+- datasets (for data tools): `pip install datasets`, used by `tools/wikipedia_downloader.py`
+
+### Installation
 
 ```bash
-# 克隆项目
+# Clone the repository
 git clone https://github.com/tylerelyt/test_bed.git
 cd test_bed
 
-# 创建虚拟环境
+# Create virtual environment
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 
-# 安装依赖
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 启动系统
+### Preloaded Dataset (Read-Only)
+
+If `data/preloaded_documents.json` exists, the system loads these Chinese Wikipedia documents as a read-only core dataset:
+- **Immutable**: Preloaded documents are read-only in the UI
+- **Auto-loading**: Automatically loads `data/preloaded_documents.json` at startup (if present)
+- **User Documents**: Importing/editing via the UI is not supported in this version
+- **Data Source**: Typically generated from Hugging Face `fjcanyue/wikipedia-zh-cn` via tooling
+
+Note: If no preloaded file is present, the system will still start but the text index may be empty until data is provided offline.
+
+### Preloaded Knowledge Graph (Read-Only)
+
+The system automatically loads a preloaded Chinese knowledge graph if available:
+- **Primary Source**: `data/openkg_triples.tsv` - Real OpenKG concept hierarchy data (290 entities, 254 relations)
+- **Fallback**: `data/preloaded_knowledge_graph.json` - Alternative format if TSV not available
+- **Auto-generation**: Run `python tools/openkg_generator.py` to download fresh OpenKG sample data
+- **Format**: TSV format with concept-category relationships (e.g., "移动应用 属于 软件")
+- **Data Source**: OpenKG OpenConcepts project from GitHub
+
+The knowledge graph powers entity recognition and context engineering features.
+
+### Start the System
 
 ```bash
-# 方式1: 使用启动脚本
+# Method 1: Using startup script
 ./quick_start.sh
 
-# 方式2: 直接启动
+# Method 2: Direct startup
 python start_system.py
 ```
 
-系统启动后，访问 http://localhost:7861 即可使用。
+After the system starts, visit http://localhost:7861 to use the interface.
 
-## 📖 使用指南
+### Configuration
 
-### 基本使用
+Basic configuration is done in code. Optional environment variables include LLM provider credentials used by NER/RAG (see comments in `src/search_engine/index_tab/ner_service.py`).
 
-1. **索引构建**: 系统启动时会自动构建索引，也可以手动添加文档
-2. **搜索测试**: 在搜索框中输入查询词，系统会返回相关文档
-3. **点击反馈**: 点击搜索结果可以记录用户行为，用于模型训练
-4. **模型训练**: 收集足够数据后，可以训练CTR预测模型
+### System Architecture Overview
 
-### 高级功能
+The platform is organized into **three main functional areas** with shared infrastructure:
 
-#### 1. 批量数据导入
+#### 🔍 Search & Recommendation Module
+- **Index Building Tab**: Offline index construction, document management, and knowledge graph building
+- **Search Tab**: Online retrieval and ranking with CTR-based optimization  
+- **Training Tab**: CTR data collection and Wide & Deep model training
+
+#### 🤖 Context Engineering Module
+- **Context Q&A Tab**: Context‑augmented answering with Ollama integration
+- **Knowledge Graph Integration**: Semantic search with LLM-based entity recognition
+- **Multi-source Retrieval**: Documents, graphs, and structured data integration
+
+> Note: Context Engineering / KG rely on a locally running Ollama service and available models. If Ollama is not running or the model hasn't been pulled, the page will show a connection error, but other parts of the system remain available.
+
+#### 🖼️ Image Search Module
+- **Image Search Tab**: CLIP-based image retrieval supporting image-to-image and text-to-image search
+- **Image Management**: Upload, indexing, and library management
+- **Multi-modal Understanding**: Cross-modal semantic search capabilities
+
+#### 🏗️ Shared Infrastructure
+- **Service Management**: Unified service discovery and orchestration
+- **Monitoring Tab**: System performance monitoring and health checks
+- **Data Pipeline**: Centralized data processing and storage
+- **Web Interface**: Modern responsive UI with Gradio framework
+
+## 🖼️ Image Search System
+
+### Overview
+
+The image search system leverages OpenAI's CLIP model to provide intelligent image retrieval capabilities:
+
+- **📤 Image Upload**: Store images with descriptions and tags
+- **🔍 Image-to-Image Search**: Find visually similar images using query images
+- **💬 Text-to-Image Search**: Search images using natural language descriptions
+- **📋 Image Management**: Comprehensive image library management
+
+### Technical Details
+
+- **Model**: OpenAI CLIP ViT-B/32 via Hugging Face Transformers
+- **Embedding Dimension**: 512-dimensional vectors
+- **Similarity Metric**: Cosine similarity
+- **Supported Formats**: JPG, PNG, GIF, BMP, and more
+- **Performance**: Sub-second search response times
+
+### Usage Examples
+
+#### Text-to-Image Search
+```python
+# Examples of search queries
+"a red car on the street"
+"cat sleeping on a bed"
+"beautiful sunset landscape"
+"person running"  # Non-English queries are also supported
+```
+
+#### Upload and Index Images
+1. Navigate to "🖼️ Image Search System" → "📤 Image Upload"
+2. Select image files and add descriptions/tags
+3. Click "📤 Upload Image" to index
+
+#### Search Similar Images
+1. Go to "🔍 Image-to-Image" tab
+2. Upload a query image
+3. Adjust the number of results (1-20)
+4. View results in table and gallery format
+
+For detailed usage instructions, see:
+- [Search Guide](docs/SEARCH_GUIDE.md)
+- [Context Engineering Guide](docs/CONTEXT_ENGINEERING_GUIDE.md)
+- [Image Search Guide](docs/IMAGE_SEARCH_GUIDE.md)
+
+## 📖 User Guide
+
+### Basic Usage
+
+1. **Index Building**: The system automatically loads preloaded documents (if present) and builds the index on startup; manual document addition via UI is not supported
+2. **Search Testing**: Enter queries in the search box to retrieve relevant documents
+3. **Click Feedback**: Clicking search results records user behavior for model training
+4. **Model Training**: After collecting sufficient data, train CTR prediction models
+
+### Advanced Features
+
+#### 1. Batch Data Import
 
 ```python
 from src.search_engine.data_utils import import_ctr_data
 result = import_ctr_data("path/to/your/data.json")
 ```
 
-#### 2. 自定义排序策略
+#### 2. Custom Ranking Strategy
 
 ```python
 from src.search_engine.service_manager import get_index_service
 index_service = get_index_service()
-results = index_service.search("查询词", top_k=10)
+results = index_service.search("query terms", top_k=10)
 ```
 
-#### 3. 实验管理
+#### 3. Experiment Management
 
-系统支持A/B测试，可以在监控页面配置不同的排序策略进行对比。
+The system supports A/B testing with configurable ranking strategies for comparison in the monitoring interface.
 
-## 🏗️ 架构设计
+## 🏗️ Architecture Design
 
-### 系统架构
+### System Architecture
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   UI Layer      │    │  Business Layer │    │  Service Layer  │
-│                 │    │                 │    │                 │
-│ ┌─────────────┐ │    │ ┌─────────────┐ │    │ ┌─────────────┐ │
-│ │   Portal    │ │───▶│ │ Search Tab  │ │───▶│ │DataService  │ │
-│ └─────────────┘ │    │ └─────────────┘ │    │ └─────────────┘ │
-│                 │    │ ┌─────────────┐ │    │ ┌─────────────┐ │
-│                 │    │ │Training Tab │ │───▶│ │IndexService │ │
-│                 │    │ └─────────────┘ │    │ └─────────────┘ │
-│                 │    │ ┌─────────────┐ │    │ ┌─────────────┐ │
-│                 │    │ │Monitor Tab  │ │───▶│ │ModelService │ │
-│                 │    │ └─────────────┘ │    │ └─────────────┘ │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
-
-### 数据流
-
-```
-用户查询 → 索引检索 → 初排序 → CTR预测 → 重排序 → 结果展示
-    ↓
-用户点击 → 行为记录 → 数据存储 → 模型训练 → 模型更新
-```
-
-## 📊 性能指标
-
-- **检索延迟**: < 100ms (10K文档)
-- **并发支持**: 100+ 并发用户
-- **内存使用**: < 500MB (基础配置)
-- **存储效率**: 压缩率 > 70%
-
-## 🛠️ 开发指南
-
-### 项目结构
-
-```
-intelligent-search-engine/
-├── src/                    # 源代码
-│   └── search_engine/     
-│       ├── data_service.py      # 数据服务
-│       ├── index_service.py     # 索引服务
-│       ├── model_service.py     # 模型服务
-│       ├── service_manager.py   # 服务管理器
-│       ├── data_utils.py        # 数据工具
-│       └── portal.py           # UI入口
-├── models/                # 模型文件
-├── data/                  # 数据文件
-├── docs/                  # 文档
-├── test/                  # 测试
-├── tools/                 # 工具脚本
-└── requirements.txt       # 依赖
+```mermaid
+graph TB
+    subgraph "🖥️ Web Interface Layer"
+        Portal["Portal<br/>🚪 Main Entry"]
+    end
+    
+    subgraph "📱 Application Layer"
+        SearchMod["🔍 Search & Recommendation<br/>• Index Building<br/>• Text Search<br/>• CTR Training"]
+        RAGMod["🤖 Context Engineering<br/>• Context Q&A<br/>• Knowledge Graph<br/>• Multi-source Retrieval"]
+        ImageMod["🖼️ Image Search<br/>• Image Upload<br/>• Image-to-Image<br/>• Text-to-Image"]
+    end
+    
+    subgraph "🏗️ Service Layer"
+        DataSvc["DataService<br/>📊 CTR Data Management"]
+        IndexSvc["IndexService<br/>📚 Text Indexing & Search"]
+        ModelSvc["ModelService<br/>🤖 ML Model Management"]
+        ImageSvc["ImageService<br/>🖼️ CLIP-based Search"]
+        ExpSvc["ExperimentService<br/>🧪 A/B Testing"]
+    end
+    
+    subgraph "📊 Infrastructure Layer"
+        Monitor["Monitoring<br/>📈 Performance Tracking"]
+        Storage["Storage<br/>💾 Data Persistence"]
+        ServiceMgr["ServiceManager<br/>🔧 Service Orchestration"]
+    end
+    
+    Portal --> SearchMod
+    Portal --> RAGMod
+    Portal --> ImageMod
+    
+    SearchMod --> DataSvc
+    SearchMod --> IndexSvc
+    SearchMod --> ModelSvc
+    
+    RAGMod --> IndexSvc
+    RAGMod --> ModelSvc
+    
+    ImageMod --> ImageSvc
+    
+    DataSvc --> ServiceMgr
+    IndexSvc --> ServiceMgr
+    ModelSvc --> ServiceMgr
+    ImageSvc --> ServiceMgr
+    ExpSvc --> ServiceMgr
+    
+    ServiceMgr --> Monitor
+    ServiceMgr --> Storage
 ```
 
-### 扩展开发
+### Data Flow
 
-#### 添加新的排序算法
+```mermaid
+graph LR
+    subgraph "🔍 Search & Recommendation Flow"
+        A1[User Query] --> A2[Index Retrieval]
+        A2 --> A3[Initial Ranking]
+        A3 --> A4[CTR Prediction]
+        A4 --> A5[Re-ranking]
+        A5 --> A6[Results Display]
+        A6 --> A7[User Click]
+        A7 --> A8[Behavior Recording]
+        A8 --> A9[Model Training]
+        A9 --> A4
+    end
+    
+    subgraph "🤖 Context Engineering Flow"
+        B1[User Question] --> B2[Document Retrieval]
+        B2 --> B3[Knowledge Graph Query]
+        B3 --> B4[Context Assembly]
+        B4 --> B5[LLM Generation]
+        B5 --> B6[Response Display]
+    end
+    
+    subgraph "🖼️ Image Search Flow"
+        C1[Image/Text Query] --> C2[CLIP Encoding]
+        C2 --> C3[Similarity Calculation]
+        C3 --> C4[Result Ranking]
+        C4 --> C5[Image Gallery Display]
+        C5 --> C6[User Interaction]
+        C6 --> C7[Usage Analytics]
+    end
+```
 
-1. 在 `src/search_engine/ranking/` 创建新的排序模块
-2. 实现 `RankingInterface` 接口
-3. 在 `IndexService` 中注册新算法
+## 📊 Notes
 
-#### 添加新的特征
+This project is a testbed for learning and experimentation. Any performance numbers depend on environment, data size, and configuration and are not guaranteed.
 
-1. 在 `CTRSampleConfig` 中定义新特征
-2. 在 `DataService.record_impression` 中计算特征值
-3. 更新模型训练逻辑
+## 🛠️ Development Guide
 
-## 🧪 测试
+### Project Structure
+
+```
+Testbed/
+├── src/                          # Source code
+│   └── search_engine/           
+│       ├── data_service.py            # Data service (CTR data management)
+│       ├── index_service.py           # Index service (text search & indexing)
+│       ├── model_service.py           # Model service (CTR & Wide&Deep models)
+│       ├── image_service.py           # Image service (CLIP-based image search)
+│       ├── experiment_service.py      # Experiment management service
+│       ├── service_manager.py         # Service manager (unified service access)
+│       ├── data_utils.py              # Data processing utilities
+│       ├── portal.py                  # Main UI entry point
+│       ├── index_tab/                 # Index building & knowledge graph UI
+│       │   ├── index_tab.py
+│       │   ├── knowledge_graph.py
+│       │   ├── ner_service.py
+│       │   └── offline_index.py
+│       ├── search_tab/                # Text search UI
+│       │   ├── search_tab.py
+│       │   └── search_engine.py
+│       ├── image_tab/                 # Image search UI
+│       │   └── image_tab.py
+│       ├── training_tab/              # Model training UI
+│       │   ├── training_tab.py
+│       │   ├── ctr_model.py
+│       │   ├── ctr_wide_deep_model.py
+│       │   └── ctr_config.py
+│       ├── rag_tab/                   # RAG Q&A system UI
+│       │   ├── rag_tab.py
+│       │   └── rag_service.py
+│       └── monitoring_tab/            # System monitoring UI
+│           └── monitoring_tab.py
+├── models/                       # Model files and data storage
+│   ├── ctr_model.pkl                 # Trained CTR model
+│   ├── wide_deep_ctr_model.h5        # Wide & Deep model
+│   ├── index_data.json               # Text search index
+│   ├── knowledge_graph.pkl           # Knowledge graph data
+│   └── images/                       # Image storage and embeddings
+│       ├── image_index.json
+│       └── image_embeddings.npy
+├── data/                         # Training and experiment data
+│   └── preloaded_documents.json     # Preloaded Chinese Wikipedia documents
+├── docs/                         # Documentation (simplified)
+│   ├── SEARCH_GUIDE.md              # Search & Recommendation guide
+│   ├── CONTEXT_ENGINEERING_GUIDE.md # Context Engineering guide
+│   └── IMAGE_SEARCH_GUIDE.md        # Image search guide
+├── examples/                     # Example scripts
+├── tools/                        # Utility and monitoring tools
+├── test/ & tests/                # Test suites
+├── start_system.py               # System startup script
+├── quick_start.sh                # Quick start script
+└── requirements.txt              # Python dependencies
+```
+
+### Extension Development
+
+#### Adding New Ranking Algorithms
+
+1. Create new ranking module in `src/search_engine/ranking/`
+2. Implement `RankingInterface` interface
+3. Register new algorithm in `IndexService`
+
+#### Adding New Features
+
+1. Define new features in `CTRSampleConfig`
+2. Calculate feature values in `DataService.record_impression`
+3. Update model training logic
+
+#### Adding New Image Search Features
+
+1. Extend `ImageService` class with new methods
+2. Update `image_tab.py` UI components
+3. Test with various image types and queries
+
+## 🧪 Testing
 
 ```bash
-# 运行单元测试
-python -m pytest test/
-
-# 运行集成测试
-python test/test_integration.py
-
-# 性能测试
-python test/test_performance.py
+# Run unit tests (if present)
+python -m pytest tests/
 ```
 
-## 📈 监控
+## 📈 Monitoring
 
-系统提供多维度监控：
+The system provides multi-dimensional monitoring:
 
-- **系统监控**: CPU、内存、磁盘使用率
-- **业务监控**: 搜索QPS、点击率、响应时间
-- **数据监控**: 数据质量、模型性能指标
-- **告警机制**: 异常检测和自动告警
+- **System Monitoring**: CPU, memory, disk usage
+- **Business Monitoring**: Search QPS, click-through rate, response time
+- **Data Monitoring**: Data quality, model performance metrics
+- **Image Search Monitoring**: CLIP model performance, search accuracy
+- **Alert Mechanism**: Anomaly detection and automatic alerting
 
-## 🤝 贡献指南
+## 🤝 Contributing
 
-1. Fork 本项目
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 创建 Pull Request
+1. Fork the project
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Create a Pull Request
 
-## 📄 许可证
+## 📄 License
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 致谢
+## 🙏 Acknowledgments
 
-- [jieba](https://github.com/fxsjy/jieba) - 中文分词
-- [scikit-learn](https://scikit-learn.org/) - 机器学习库
-- [Gradio](https://gradio.app/) - Web界面框架
-- [pandas](https://pandas.pydata.org/) - 数据处理
+- [jieba](https://github.com/fxsjy/jieba) - Chinese word segmentation
+- [scikit-learn](https://scikit-learn.org/) - Machine learning library
+- [Gradio](https://gradio.app/) - Web interface framework
+- [pandas](https://pandas.pydata.org/) - Data processing
+- [Hugging Face Transformers](https://huggingface.co/transformers/) - CLIP model implementation
+- [OpenAI CLIP](https://github.com/openai/CLIP) - Original CLIP model
 
-## 📞 联系方式
+## 📞 Contact
 
-- 项目主页: https://github.com/tylerelyt/test_bed
-- 问题反馈: https://github.com/tylerelyt/test_bed/issues
-- 邮箱: tylerelyt@gmail.com
-
-## 🔄 更新日志
-
-### v1.0.0 (2024-07-14)
-- ✨ 初始版本发布
-- 🔍 基础搜索功能
-- 🧠 CTR预测模型
-- 📊 数据分析界面
-- 🏗️ MLOps支持
-
----
-
-⭐ 如果这个项目对你有帮助，请给它一个星标！ 
+- Project Homepage: https://github.com/tylerelyt/test_bed
+- Issue Tracker: https://github.com/tylerelyt/test_bed/issues
+- Email: tylerelyt@gmail.com

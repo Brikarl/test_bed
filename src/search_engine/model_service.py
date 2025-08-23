@@ -5,15 +5,19 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime
 import pandas as pd
 from .training_tab.ctr_model import CTRModel
-from .training_tab.ctr_config import CTRSampleConfig
+from .training_tab.ctr_config import CTRSampleConfig, CTRModelConfig
 
 
 class ModelService:
     """模型服务：负责模型训练、配置管理、模型文件等"""
     
-    def __init__(self, model_file: str = "models/ctr_model.pkl"):
+    def __init__(self, model_file: str = None):
+        if model_file is None:
+            model_file = os.path.join(os.getcwd(), "models", "ctr_model.pkl")
         self.model_file = model_file
-        self.ctr_model = CTRModel()
+        self.ctr_model = CTRModel()  # 默认使用LR模型
+        self.current_model_type = "logistic_regression"
+        self.model_instances = {}  # 存储不同类型的模型实例
         self._load_model()
     
     def _load_model(self):
@@ -22,6 +26,55 @@ class ModelService:
             print(f"✅ CTR模型加载成功: {self.model_file}")
         else:
             print(f"⚠️ CTR模型未找到，将使用未训练状态: {self.model_file}")
+    
+    def create_model_instance(self, model_type: str):
+        """创建指定类型的模型实例"""
+        try:
+            if model_type in self.model_instances:
+                return self.model_instances[model_type]
+            
+            model_config = CTRModelConfig.get_model_config(model_type)
+            if not model_config:
+                raise ValueError(f"不支持的模型类型: {model_type}")
+            
+            if model_type == 'logistic_regression':
+                from .training_tab.ctr_model import CTRModel
+                model_instance = CTRModel()
+            elif model_type == 'wide_and_deep':
+                from .training_tab.ctr_wide_deep_model import WideAndDeepCTRModel
+                model_instance = WideAndDeepCTRModel()
+            else:
+                raise ValueError(f"未实现的模型类型: {model_type}")
+            
+            # 尝试加载对应的模型文件
+            if model_type == 'logistic_regression':
+                model_file = os.path.join(os.getcwd(), "models", "ctr_model.pkl")  # LR使用绝对路径
+            elif model_type == 'wide_and_deep':
+                model_file = os.path.join(os.getcwd(), "models", "wide_deep_ctr_model")
+            else:
+                model_file = os.path.join(os.getcwd(), "models", f"{model_type}_ctr_model.pkl")
+            
+            model_instance.load_model(model_file)
+            self.model_instances[model_type] = model_instance
+            
+            return model_instance
+            
+        except Exception as e:
+            print(f"创建模型实例失败: {e}")
+            # 回退到默认LR模型
+            from .training_tab.ctr_model import CTRModel
+            return CTRModel()
+    
+    def switch_model(self, model_type: str):
+        """切换到指定类型的模型"""
+        try:
+            self.ctr_model = self.create_model_instance(model_type)
+            self.current_model_type = model_type
+            print(f"✅ 已切换到模型: {CTRModelConfig.get_model_config(model_type).get('name', model_type)}")
+            return True
+        except Exception as e:
+            print(f"切换模型失败: {e}")
+            return False
     
     def train_model(self, data_service) -> Dict[str, Any]:
         """训练CTR模型"""
@@ -56,21 +109,37 @@ class ModelService:
                 'error': error_msg
             }
     
-    def save_model(self, filepath: Optional[str] = None) -> bool:
+    def save_model(self, filepath: Optional[str] = None, model_type: Optional[str] = None) -> bool:
         """保存模型"""
         try:
-            save_path = filepath or self.model_file
+            model_type = model_type or self.current_model_type
+            
+            # 根据模型类型确定保存路径
+            if filepath:
+                save_path = filepath
+            else:
+                if model_type == 'wide_and_deep':
+                    save_path = os.path.join(os.getcwd(), "models", "wide_deep_ctr_model")
+                elif model_type == 'logistic_regression':
+                    save_path = os.path.join(os.getcwd(), "models", "ctr_model.pkl")  # LR使用标准文件名
+                else:
+                    save_path = os.path.join(os.getcwd(), "models", f"{model_type}_ctr_model.pkl")
+            
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
             
             # 保存模型
             self.ctr_model.save_model(save_path)
             
             # 保存模型信息
-            info_path = save_path.replace('.pkl', '_info.json')
+            info_suffix = '_info.json' if model_type != 'wide_and_deep' else '_info.json'
+            info_path = save_path.replace('.pkl', info_suffix).replace('.h5', info_suffix)
+            
+            model_config = CTRModelConfig.get_model_config(model_type)
             model_info = {
                 'model_file': save_path,
                 'save_time': datetime.now().isoformat(),
-                'model_type': 'CTR_LogisticRegression',
+                'model_type': model_config.get('name', model_type),
+                'model_class': model_config.get('class', 'Unknown'),
                 'feature_count': 0,  # 简化处理
                 'training_samples': 0  # 简化处理
             }
@@ -99,25 +168,46 @@ class ModelService:
             print(f"❌ 加载模型时发生错误: {e}")
             return False
     
-    def predict_ctr(self, features: Dict[str, Any]) -> float:
+    def predict_ctr(self, features: Dict[str, Any], model_type: Optional[str] = None) -> float:
         """预测CTR"""
         try:
-            if not self.ctr_model.is_trained:
+            # 始终使用指定类型的模型实例，确保使用最新训练的模型
+            if model_type:
+                model_instance = self.get_model_instance(model_type)
+            else:
+                # 如果没有指定模型类型，使用当前默认模型类型
+                model_instance = self.get_model_instance(self.current_model_type)
+            
+            if not model_instance.is_trained:
                 return 0.1  # 默认CTR
             
-            # 使用CTRModel的predict_ctr方法
+            # 使用指定模型的predict_ctr方法
             query = features.get('query', '')
             doc_id = features.get('doc_id', '')
             position = features.get('position', 1)
             score = features.get('score', 0.0)
             summary = features.get('summary', '')
+            current_timestamp = features.get('timestamp')  # 获取时间戳参数
             
-            ctr_score = self.ctr_model.predict_ctr(query, doc_id, position, score, summary)
+            # 检查模型是否是Wide & Deep模型，如果是则传递时间戳参数
+            if hasattr(model_instance, '__class__') and 'WideAndDeep' in model_instance.__class__.__name__:
+                ctr_score = model_instance.predict_ctr(query, doc_id, position, score, summary, current_timestamp)
+            else:
+                # 对于其他CTR模型（如LR模型），保持原有的调用方式
+                ctr_score = model_instance.predict_ctr(query, doc_id, position, score, summary)
+            
             return float(ctr_score)
             
         except Exception as e:
             print(f"❌ CTR预测失败: {e}")
             return 0.1
+    
+    def get_model_instance(self, model_type: str):
+        """获取指定类型的模型实例"""
+        # 每次都重新创建实例，确保加载最新的模型文件
+        # 这解决了训练后模型不同步的问题
+        self.model_instances[model_type] = self.create_model_instance(model_type)
+        return self.model_instances[model_type]
     
     def _prepare_features(self, features: Dict[str, Any]) -> Optional[List[float]]:
         """准备特征向量"""
