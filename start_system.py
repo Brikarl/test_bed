@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 MLOps搜索引擎测试床 - 启动脚本
-功能：启动完整的搜索引擎系统，包括数据服务、索引服务、模型服务和UI界面
+功能：启动完整的搜索引擎系统，包括MCP服务器、数据服务、索引服务、模型服务和UI界面
 """
 
 import subprocess
@@ -11,6 +11,9 @@ import sys
 import signal
 import time
 import importlib.util
+import asyncio
+from typing import List, Optional
+from urllib import request, error
 
 def load_env_file():
     """加载 .env 文件中的环境变量"""
@@ -33,8 +36,10 @@ def print_banner():
     print("🎯 MLOps搜索引擎测试床 - 启动脚本")
     print("=" * 60)
     print("📖 功能: 启动完整的搜索引擎系统")
-    print("🔧 包含: 数据服务、索引服务、模型服务、UI界面")
-    print("🌐 访问: http://localhost:7861 (或自动分配端口)")
+    print("🔧 包含: MCP服务器、数据服务、索引服务、模型服务、UI界面")
+    print("🌐 访问: http://localhost:7861 (主系统)")
+    print("🔗 MCP: http://localhost:3001/mcp (统一服务器)")
+    print("🤖 模型服务: http://localhost:8501 (Model Serving API)")
     print("🛑 停止: 按 Ctrl+C 或关闭终端")
     print("=" * 60)
 
@@ -76,9 +81,45 @@ def check_dependencies():
     print("✅ 所有依赖检查通过")
     return True
 
+def check_api_keys():
+    """检查API密钥配置"""
+    print("\n🔑 步骤2: 检查API密钥配置")
+    print("-" * 30)
+    
+    # 检查DashScope API密钥
+    dashscope_key = os.getenv("DASHSCOPE_API_KEY")
+    if dashscope_key:
+        print(f"✅ API密钥已加载: {dashscope_key[:10]}...")
+        
+        # 测试API密钥是否有效
+        try:
+            from openai import OpenAI
+            client = OpenAI(
+                api_key=dashscope_key,
+                base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+            )
+            
+            # 简单测试调用
+            response = client.chat.completions.create(
+                model="qwen-max",
+                messages=[{"role": "user", "content": "测试"}],
+                max_tokens=10
+            )
+            print("✅ DashScope API密钥验证成功")
+            return True
+            
+        except Exception as e:
+            print(f"❌ DashScope API密钥验证失败: {str(e)}")
+            print("🔧 请检查API密钥是否正确配置")
+            return False
+    else:
+        print("❌ DASHSCOPE_API_KEY 环境变量未设置")
+        print("🔧 请在 .env 文件中设置 DASHSCOPE_API_KEY=your_api_key")
+        return False
+
 def check_project_structure():
     """检查项目结构是否完整"""
-    print("\n📁 步骤2: 检查项目结构")
+    print("\n📁 步骤3: 检查项目结构")
     print("-" * 30)
     
     required_files = [
@@ -124,7 +165,7 @@ def check_project_structure():
 
 def kill_processes_on_ports(ports):
     """清理指定端口的进程"""
-    print("\n🔧 步骤3: 清理端口占用")
+    print("\n🔧 步骤4: 清理端口占用")
     print("-" * 30)
     
     for port in ports:
@@ -155,7 +196,7 @@ def kill_processes_on_ports(ports):
 
 def build_index_if_needed(current_dir, env):
     """如果需要，构建索引"""
-    print("\n📦 步骤4: 检查索引文件")
+    print("\n📦 步骤5: 检查索引文件")
     print("-" * 30)
     
     # 若存在预置文档文件，则优先使用服务层自动加载，无需强制离线构建
@@ -184,9 +225,122 @@ def build_index_if_needed(current_dir, env):
     
     return True
 
+def start_mcp_server():
+    """启动统一MCP服务器"""
+    print("\n🚀 步骤6: 启动统一MCP服务器")
+    print("-" * 30)
+    
+    # 若已运行则直接使用现有实例
+    mcp_url = "http://localhost:3001/mcp"
+    try:
+        req = request.Request(mcp_url, method="GET")
+        with request.urlopen(req, timeout=2) as resp:
+            if 200 <= resp.status < 300:
+                print("✅ 检测到已运行的统一MCP服务器，直接复用: http://localhost:3001/mcp")
+                # 返回一个非 None 的占位对象表示成功
+                return {"status": "already_running", "url": mcp_url}
+    except Exception:
+        pass
+
+    # 检查MCP服务器文件是否存在
+    mcp_server_file = "src/search_engine/mcp/dynamic_mcp_server.py"
+    if not os.path.exists(mcp_server_file):
+        print(f"❌ MCP服务器文件不存在: {mcp_server_file}")
+        return None
+    
+    # 启动动态MCP服务器
+    print("🔄 正在启动动态MCP服务器...")
+    mcp_process = subprocess.Popen([
+        sys.executable, 
+        mcp_server_file
+    ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    
+    # 等待服务器启动
+    print("⏳ 等待MCP服务器启动...")
+    time.sleep(2)
+    
+    # 启动后再次探测HTTP健康
+    try:
+        with request.urlopen(request.Request(mcp_url, method="GET"), timeout=3) as resp:
+            if 200 <= resp.status < 300:
+                print("✅ 统一MCP服务器启动成功")
+                print("📍 MCP服务器地址: http://localhost:3001/mcp")
+                return mcp_process
+    except Exception:
+        pass
+    
+    # 兜底：检查进程状态
+    if mcp_process.poll() is None:
+        print("✅ 统一MCP服务器进程已启动（等待就绪）")
+        print("📍 MCP服务器地址: http://localhost:3001/mcp")
+        return mcp_process
+    
+    stdout, stderr = mcp_process.communicate()
+    print(f"❌ 统一MCP服务器启动失败")
+    if stderr:
+        try:
+            print(f"错误输出: {stderr.decode()}")
+        except Exception:
+            print("错误输出: <无法解码>")
+    return None
+
+def check_and_start_model_service():
+    """检查并启动模型服务（独立进程）"""
+    print("\n🔍 步骤7: 检查模型服务")
+    print("-" * 30)
+    
+    # 检查模型服务是否已运行
+    model_service_url = "http://localhost:8501/health"
+    try:
+        req = request.Request(model_service_url, method="GET")
+        with request.urlopen(req, timeout=2) as resp:
+            if 200 <= resp.status < 300:
+                print("✅ 检测到已运行的模型服务，直接复用: http://localhost:8501")
+                return True
+    except Exception:
+        pass
+    
+    # 模型服务未运行，启动独立进程
+    print("🚀 启动模型服务独立进程...")
+    try:
+        # 启动模型服务独立进程
+        model_service_script = os.path.join(os.path.dirname(__file__), 'start_model_serving.py')
+        
+        # 使用subprocess启动独立进程
+        process = subprocess.Popen(
+            [sys.executable, model_service_script],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=os.path.dirname(__file__)
+        )
+        
+        # 等待服务启动
+        print("⏳ 等待模型服务启动...")
+        time.sleep(3)
+        
+        # 检查服务是否成功启动
+        try:
+            req = request.Request(model_service_url, method="GET")
+            with request.urlopen(req, timeout=5) as resp:
+                if 200 <= resp.status < 300:
+                    print("✅ 模型服务独立进程启动成功: http://localhost:8501")
+                    print("📋 可用接口:")
+                    print("   - 健康检查: http://localhost:8501/health")
+                    print("   - 模型列表: http://localhost:8501/v1/models")
+                    print("   - 预测接口: http://localhost:8501/v1/models/<model_name>:predict")
+                    print("   - 批量预测: http://localhost:8501/v1/models/<model_name>/batch_predict")
+                    return True
+        except Exception as e:
+            print(f"❌ 模型服务启动后健康检查失败: {e}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ 启动模型服务独立进程失败: {e}")
+        return False
+
 def start_system(current_dir, env):
     """启动系统"""
-    print("\n🚀 步骤5: 启动MLOps系统")
+    print("\n🚀 步骤8: 启动MLOps系统")
     print("-" * 30)
     print("🔄 正在启动以下服务:")
     print("   📊 数据服务 (DataOps)")
@@ -194,6 +348,7 @@ def start_system(current_dir, env):
     print("   🤖 模型服务 (ModelOps)")
     print("   🧪 实验服务 (ExperimentService)")
     print("   🖥️  UI界面 (Portal)")
+    print("   🔗 MCP集成 (MCP Tab)")
     
     try:
         print("\n🌐 启动Web界面...")
@@ -250,18 +405,32 @@ def main():
         if not check_dependencies():
             return 1
         
-        # 2. 检查项目结构
+        # 2. 检查API密钥
+        if not check_api_keys():
+            return 1
+        
+        # 3. 检查项目结构
         if not check_project_structure():
             return 1
         
-        # 3. 清理端口
+        # 4. 清理端口
         kill_processes_on_ports([7860, 7861, 7862, 7863, 7864, 7865])
         
-        # 4. 构建索引
+        # 5. 构建索引
         if not build_index_if_needed(current_dir, env):
             return 1
         
-        # 5. 启动系统
+        # 6. 启动MCP服务器
+        mcp_process = start_mcp_server()
+        if mcp_process is None:
+            print("❌ 统一MCP服务器启动失败，无法继续启动主系统。")
+            return 1
+        
+        # 7. 检查并启动模型服务
+        if not check_and_start_model_service():
+            print("⚠️ 模型服务启动失败，但系统将继续运行")
+        
+        # 8. 启动系统
         start_system(current_dir, env)
         
         return 0
