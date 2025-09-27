@@ -47,7 +47,7 @@ def check_dependencies():
     """检查必要的依赖是否已安装"""
     print("\n🔍 步骤1: 检查系统依赖")
     print("-" * 30)
-    
+
     required_packages = [
         ('gradio', 'gradio>=4.0.0'),
         ('pandas', 'pandas>=1.5.0'),
@@ -55,7 +55,7 @@ def check_dependencies():
         ('sklearn', 'scikit-learn>=1.2.0'),
         ('jieba', 'jieba>=0.42.1')
     ]
-    
+
     missing_packages = []
     for package, requirement in required_packages:
         try:
@@ -68,7 +68,7 @@ def check_dependencies():
         except ImportError:
             missing_packages.append(requirement)
             print(f"❌ 缺少依赖: {requirement}")
-    
+
     if missing_packages:
         print(f"\n❌ 发现 {len(missing_packages)} 个缺少的依赖包")
         print("🔧 请运行以下命令安装依赖:")
@@ -77,7 +77,7 @@ def check_dependencies():
         for package in missing_packages:
             print(f"   pip install {package}")
         return False
-    
+
     print("✅ 所有依赖检查通过")
     return True
 
@@ -85,20 +85,21 @@ def check_api_keys():
     """检查API密钥配置"""
     print("\n🔑 步骤2: 检查API密钥配置")
     print("-" * 30)
-    
+
     # 检查DashScope API密钥
     dashscope_key = os.getenv("DASHSCOPE_API_KEY")
+    dashscope_url = os.getenv("DASHSCOPE_API_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
     if dashscope_key:
         print(f"✅ API密钥已加载: {dashscope_key[:10]}...")
-        
+
         # 测试API密钥是否有效
         try:
             from openai import OpenAI
             client = OpenAI(
                 api_key=dashscope_key,
-                base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+                base_url=dashscope_url,
             )
-            
+
             # 简单测试调用
             response = client.chat.completions.create(
                 model="qwen-max",
@@ -107,7 +108,7 @@ def check_api_keys():
             )
             print("✅ DashScope API密钥验证成功")
             return True
-            
+
         except Exception as e:
             print(f"❌ DashScope API密钥验证失败: {str(e)}")
             print("🔧 请检查API密钥是否正确配置")
@@ -121,7 +122,7 @@ def check_project_structure():
     """检查项目结构是否完整"""
     print("\n📁 步骤3: 检查项目结构")
     print("-" * 30)
-    
+
     required_files = [
         'src/search_engine/portal.py',
         'src/search_engine/data_service.py',
@@ -129,16 +130,16 @@ def check_project_structure():
         'src/search_engine/model_service.py',
         'requirements.txt'
     ]
-    
+
     required_dirs = [
         'src/search_engine',
         'models',
         'data',
         'tools'
     ]
-    
+
     missing_items = []
-    
+
     # 检查文件
     for file_path in required_files:
         if not os.path.exists(file_path):
@@ -146,7 +147,7 @@ def check_project_structure():
             print(f"❌ 缺少文件: {file_path}")
         else:
             print(f"✅ 文件存在: {file_path}")
-    
+
     # 检查目录
     for dir_path in required_dirs:
         if not os.path.exists(dir_path):
@@ -154,12 +155,12 @@ def check_project_structure():
             print(f"❌ 缺少目录: {dir_path}")
         else:
             print(f"✅ 目录存在: {dir_path}")
-    
+
     if missing_items:
         print(f"\n❌ 发现 {len(missing_items)} 个缺少的文件/目录")
         print("请检查项目结构是否完整")
         return False
-    
+
     print("✅ 项目结构检查通过")
     return True
 
@@ -167,7 +168,7 @@ def kill_processes_on_ports(ports):
     """清理指定端口的进程"""
     print("\n🔧 步骤4: 清理端口占用")
     print("-" * 30)
-    
+
     for port in ports:
         try:
             result = subprocess.run(
@@ -176,7 +177,7 @@ def kill_processes_on_ports(ports):
                 text=True,
                 check=False
             )
-            
+
             if result.stdout.strip():
                 pids = result.stdout.strip().split('\n')
                 for pid in pids:
@@ -198,7 +199,7 @@ def build_index_if_needed(current_dir, env):
     """如果需要，构建索引"""
     print("\n📦 步骤5: 检查索引文件")
     print("-" * 30)
-    
+
     # 若存在预置文档文件，则优先使用服务层自动加载，无需强制离线构建
     preloaded_path = os.path.join('data', 'preloaded_documents.json')
     if not os.path.exists('models/index_data.json'):
@@ -210,8 +211,8 @@ def build_index_if_needed(current_dir, env):
             print("⏳ 这可能需要几分钟时间，请耐心等待...")
             try:
                 subprocess.run(
-                    [sys.executable, "-m", "search_engine.index_tab.offline_index"], 
-                    check=True, 
+                    [sys.executable, "-m", "search_engine.index_tab.offline_index"],
+                    check=True,
                     cwd=current_dir,
                     env=env
                 )
@@ -222,14 +223,14 @@ def build_index_if_needed(current_dir, env):
                 return False
     else:
         print("✅ 索引文件已存在，跳过构建")
-    
+
     return True
 
 def start_mcp_server():
     """启动统一MCP服务器"""
     print("\n🚀 步骤6: 启动统一MCP服务器")
     print("-" * 30)
-    
+
     # 若已运行则直接使用现有实例
     mcp_url = "http://localhost:3001/mcp"
     try:
@@ -247,18 +248,18 @@ def start_mcp_server():
     if not os.path.exists(mcp_server_file):
         print(f"❌ MCP服务器文件不存在: {mcp_server_file}")
         return None
-    
+
     # 启动动态MCP服务器
     print("🔄 正在启动动态MCP服务器...")
     mcp_process = subprocess.Popen([
-        sys.executable, 
+        sys.executable,
         mcp_server_file
     ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    
+
     # 等待服务器启动
     print("⏳ 等待MCP服务器启动...")
     time.sleep(2)
-    
+
     # 启动后再次探测HTTP健康
     try:
         with request.urlopen(request.Request(mcp_url, method="GET"), timeout=3) as resp:
@@ -268,13 +269,13 @@ def start_mcp_server():
                 return mcp_process
     except Exception:
         pass
-    
+
     # 兜底：检查进程状态
     if mcp_process.poll() is None:
         print("✅ 统一MCP服务器进程已启动（等待就绪）")
         print("📍 MCP服务器地址: http://localhost:3001/mcp")
         return mcp_process
-    
+
     stdout, stderr = mcp_process.communicate()
     print(f"❌ 统一MCP服务器启动失败")
     if stderr:
@@ -288,7 +289,7 @@ def check_and_start_model_service():
     """检查并启动模型服务（独立进程）"""
     print("\n🔍 步骤7: 检查模型服务")
     print("-" * 30)
-    
+
     # 检查模型服务是否已运行
     model_service_url = "http://localhost:8501/health"
     try:
@@ -299,13 +300,13 @@ def check_and_start_model_service():
                 return True
     except Exception:
         pass
-    
+
     # 模型服务未运行，启动独立进程
     print("🚀 启动模型服务独立进程...")
     try:
         # 启动模型服务独立进程
         model_service_script = os.path.join(os.path.dirname(__file__), 'start_model_serving.py')
-        
+
         # 使用subprocess启动独立进程
         process = subprocess.Popen(
             [sys.executable, model_service_script],
@@ -313,11 +314,11 @@ def check_and_start_model_service():
             stderr=subprocess.PIPE,
             cwd=os.path.dirname(__file__)
         )
-        
+
         # 等待服务启动
         print("⏳ 等待模型服务启动...")
         time.sleep(3)
-        
+
         # 检查服务是否成功启动
         try:
             req = request.Request(model_service_url, method="GET")
@@ -333,7 +334,7 @@ def check_and_start_model_service():
         except Exception as e:
             print(f"❌ 模型服务启动后健康检查失败: {e}")
             return False
-            
+
     except Exception as e:
         print(f"❌ 启动模型服务独立进程失败: {e}")
         return False
@@ -349,14 +350,14 @@ def start_system(current_dir, env):
     print("   🧪 实验服务 (ExperimentService)")
     print("   🖥️  UI界面 (Portal)")
     print("   🔗 MCP集成 (MCP Tab)")
-    
+
     try:
         print("\n🌐 启动Web界面...")
         print("⏳ 正在加载，请稍等...")
         print("💡 系统启动完成后，浏览器将自动打开或显示访问地址")
-        
+
         subprocess.run(
-            [sys.executable, "-m", "search_engine.portal"], 
+            [sys.executable, "-m", "search_engine.portal"],
             cwd=current_dir,
             env=env
         )
@@ -374,67 +375,67 @@ def start_system(current_dir, env):
 def main():
     """主函数"""
     print_banner()
-    
+
     # 加载环境变量
     load_env_file()
-    
+
     # 获取当前目录
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    
+
     # 设置Python路径
     src_path = os.path.join(current_dir, 'src')
     if src_path not in sys.path:
         sys.path.insert(0, src_path)
-    
+
     env = os.environ.copy()
     if 'PYTHONPATH' in env:
         env['PYTHONPATH'] = src_path + os.pathsep + env['PYTHONPATH']
     else:
         env['PYTHONPATH'] = src_path
-    
+
     # 确保 API 密钥环境变量被传递
     if 'DASHSCOPE_API_KEY' in os.environ:
         env['DASHSCOPE_API_KEY'] = os.environ['DASHSCOPE_API_KEY']
         print(f"✅ API密钥已加载: {os.environ['DASHSCOPE_API_KEY'][:15]}...")
     else:
         print("⚠️ 未找到 DASHSCOPE_API_KEY 环境变量")
-    
+
     # 执行启动流程
     try:
         # 1. 检查依赖
         if not check_dependencies():
             return 1
-        
+
         # 2. 检查API密钥
         if not check_api_keys():
             return 1
-        
+
         # 3. 检查项目结构
         if not check_project_structure():
             return 1
-        
+
         # 4. 清理端口
         kill_processes_on_ports([7860, 7861, 7862, 7863, 7864, 7865])
-        
+
         # 5. 构建索引
         if not build_index_if_needed(current_dir, env):
             return 1
-        
+
         # 6. 启动MCP服务器
         mcp_process = start_mcp_server()
         if mcp_process is None:
             print("❌ 统一MCP服务器启动失败，无法继续启动主系统。")
             return 1
-        
+
         # 7. 检查并启动模型服务
         if not check_and_start_model_service():
             print("⚠️ 模型服务启动失败，但系统将继续运行")
-        
+
         # 8. 启动系统
         start_system(current_dir, env)
-        
+
         return 0
-        
+
     except KeyboardInterrupt:
         print("\n🛑 启动过程被中断")
         return 1
@@ -444,4 +445,4 @@ def main():
 
 if __name__ == "__main__":
     exit_code = main()
-    sys.exit(exit_code) 
+    sys.exit(exit_code)
