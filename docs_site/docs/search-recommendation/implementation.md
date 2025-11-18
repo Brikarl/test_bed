@@ -371,7 +371,13 @@ def test_search_pipeline():
 
 ## Further Reading
 
-- [System Architecture]({{ site.baseurl }}/docs/search-recommendation/architecture) - Architecture design
-- [CTR Prediction Models]({{ site.baseurl }}/docs/search-recommendation/ctr-prediction) - Model details
-- [Model Evaluation]({{ site.baseurl }}/docs/search-recommendation/model-evaluation) - Evaluation methods
+### Core Components
+- [System Architecture]({{ site.baseurl }}/docs/search-recommendation/architecture) - Architecture design and system layers
+- [CTR Prediction Models]({{ site.baseurl }}/docs/search-recommendation/ctr-prediction) - Model details and training pipeline
+
+### Analysis & Optimization
+- [Model Evaluation]({{ site.baseurl }}/docs/search-recommendation/model-evaluation) - Cross-validation and performance assessment
+- [Interpretability Analysis]({{ site.baseurl }}/docs/search-recommendation/interpretability) - LIME and SHAP explanations
+- [Fairness Analysis]({{ site.baseurl }}/docs/search-recommendation/fairness) - Group performance analysis
+- [AutoML Optimization]({{ site.baseurl }}/docs/search-recommendation/automl) - Hyperparameter tuning
 
