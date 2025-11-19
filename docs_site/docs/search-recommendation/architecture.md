@@ -109,7 +109,7 @@ Where:
 - \(\text{TF}(t, d) = \frac{\text{count of term } t \text{ in document } d}{\text{total terms in document } d}\): Term frequency (normalized by document length)
 - \(\text{IDF}(t) = \log \frac{N}{df(t)}\): Inverse document frequency
   - \(N\): Total number of documents
-  - \(df(t)\): Number of documents containing term \(t\)
+  - $(df(t)\$): Number of documents containing term \(t\)
 
 **Query-Document Score**:
 

@@ -110,11 +110,11 @@ P(\text{click} = 1 \mid \mathbf{x}) = \sigma(\mathbf{w}^T \mathbf{x} + b) = \fra
 $$
 
 Where:
-- \(\mathbf{x} \in \mathbb{R}^d\): Feature vector (7-dimensional in our system)
-- \(\mathbf{w} \in \mathbb{R}^d\): Learned weight vector (one weight per feature)
-- \(b \in \mathbb{R}\): Bias term (intercept)
-- \(\sigma(z) = \frac{1}{1 + e^{-z}}\): Sigmoid function, maps real numbers to [0, 1]
-- \(\mathbf{w}^T \mathbf{x} + b\): Linear combination of features (logit)
+- $\mathbf{x} \in \mathbb{R}^d$: Feature vector (7-dimensional in our system)
+- $\mathbf{w} \in \mathbb{R}^d$: Learned weight vector (one weight per feature)
+- $b \in \mathbb{R}$: Bias term (intercept)
+- $\sigma(z) = \frac{1}{1 + e^{-z}}$: Sigmoid function, maps real numbers to [0, 1]
+- $\mathbf{w}^T \mathbf{x} + b$: Linear combination of features (logit)
 
 **Training Objective**:
 
@@ -125,21 +125,21 @@ $$
 $$
 
 Where:
-- \(n\): Number of training samples
-- \(y_i \in \{0, 1\}\): True label (1 = clicked, 0 = not clicked)
-- \(\hat{y}_i = P(\text{click} = 1 \mid \mathbf{x}_i)\): Predicted probability for sample \(i\)
+- $n$: Number of training samples
+- $y_i \in \{0, 1\}$: True label (1 = clicked, 0 = not clicked)
+- $\hat{y}_i = P(\text{click} = 1 \mid \mathbf{x}_i)$: Predicted probability for sample $i$
 
 **Understanding the Formula**:
 
 1. **Sigmoid Function**: Transforms the linear combination into a probability between 0 and 1
-2. **Logit**: The term \(\mathbf{w}^T \mathbf{x} + b\) represents the log-odds of a click
+2. **Logit**: The term $\mathbf{w}^T \mathbf{x} + b$ represents the log-odds of a click
 3. **Loss Function**: Penalizes confident wrong predictions more than uncertain ones
 4. **Optimization**: Gradient descent finds weights that minimize the loss on training data
 
 **Intuitive Explanation**:
-- If \(\mathbf{w}^T \mathbf{x} + b\) is large and positive → High click probability (close to 1)
-- If \(\mathbf{w}^T \mathbf{x} + b\) is large and negative → Low click probability (close to 0)
-- If \(\mathbf{w}^T \mathbf{x} + b = 0\) → Neutral probability (0.5)
+- If $\mathbf{w}^T \mathbf{x} + b$ is large and positive → High click probability (close to 1)
+- If $\mathbf{w}^T \mathbf{x} + b$ is large and negative → Low click probability (close to 0)
+- If $\mathbf{w}^T \mathbf{x} + b = 0$ → Neutral probability (0.5)
 - Feature weights indicate how much each feature contributes to the click probability
 
 #### Feature Engineering

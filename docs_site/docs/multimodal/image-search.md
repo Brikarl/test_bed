@@ -116,7 +116,7 @@ CLIP is trained using **contrastive learning** to align image and text represent
 
 **Contrastive Loss Function**:
 
-For a batch of \(N\) image-text pairs \(\{(I_i, T_i)\}_{i=1}^{N}\), the symmetric contrastive loss is:
+For a batch of \(N\) image-text pairs $(\{(I_i, T_i)\$}_{i=1}^{N}\), the symmetric contrastive loss is:
 
 $$
 \mathcal{L}_{\text{CLIP}} = -\frac{1}{2N} \sum_{i=1}^{N} \left[ \log \frac{\exp(\text{sim}(I_i, T_i) / \tau)}{\sum_{j=1}^{N} \exp(\text{sim}(I_i, T_j) / \tau)} + \log \frac{\exp(\text{sim}(T_i, I_i) / \tau)}{\sum_{j=1}^{N} \exp(\text{sim}(T_i, I_j) / \tau)} \right]
@@ -125,7 +125,7 @@ $$
 Where:
 - \(I_i\): Image embedding for image \(i\)
 - \(T_i\): Text embedding for text \(i\)
-- \(\text{sim}(I, T)\): Cosine similarity between image and text embeddings
+- $(\text{sim}(I, T)\$): Cosine similarity between image and text embeddings
 - \(\tau\): Temperature parameter (typically 0.07), controls the sharpness of the distribution
 - \(N\): Batch size
 

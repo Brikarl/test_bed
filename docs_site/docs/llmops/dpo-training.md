@@ -70,7 +70,7 @@ graph LR
 
 **DPO Loss Function**:
 
-Given a preference pair \((x, y_w, y_l)\) where:
+Given a preference pair $((x, y_w, y_l)\$) where:
 - \(x\) is the input prompt
 - \(y_w\) is the preferred (chosen) response
 - \(y_l\) is the rejected response

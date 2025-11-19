@@ -94,19 +94,19 @@ LIME explains individual predictions by training a simple, interpretable model (
 
 **Mathematical Formulation**:
 
-LIME finds an interpretable model \(g\) that approximates the complex model \(f\) locally around instance \(x\):
+LIME finds an interpretable model $g$ that approximates the complex model $f$ locally around instance $x$:
 
 $$
 \xi(x) = \underset{g \in G}{\arg\min} \mathcal{L}(f, g, \pi_x) + \Omega(g)
 $$
 
 Where:
-- \(f\): The complex model being explained
-- \(g\): The interpretable model (e.g., linear model)
-- \(G\): Class of interpretable models
-- \(\pi_x\): Proximity measure (how close perturbed samples are to \(x\))
-- \(\mathcal{L}(f, g, \pi_x)\): Loss function measuring how well \(g\) approximates \(f\) in the neighborhood of \(x\)
-- \(\Omega(g)\): Complexity penalty (simpler models preferred)
+- $f$: The complex model being explained
+- $g$: The interpretable model (e.g., linear model)
+- $G$: Class of interpretable models
+- $\pi_x$: Proximity measure (how close perturbed samples are to $x$)
+- $\mathcal{L}(f, g, \pi_x)$: Loss function measuring how well $g$ approximates $f$ in the neighborhood of $x$
+- $\Omega(g)$: Complexity penalty (simpler models preferred)
 
 **Loss Function**:
 
@@ -115,14 +115,14 @@ $$
 $$
 
 Where:
-- \(Z\): Set of perturbed samples around \(x\)
-- \(z\): A perturbed sample
-- \(z'\): Binary representation of \(z\) (which features are present)
-- \(\pi_x(z)\): Weight based on proximity to \(x\) (closer samples weighted more)
+- $Z$: Set of perturbed samples around $x$
+- $z$: A perturbed sample
+- $z'$: Binary representation of $z$ (which features are present)
+- $\pi_x(z)$: Weight based on proximity to $x$ (closer samples weighted more)
 
 **Intuitive Explanation**:
 - LIME finds a simple model that matches the complex model's predictions near the instance of interest
-- Features with larger coefficients in \(g\) are more important for this specific prediction
+- Features with larger coefficients in $g$ are more important for this specific prediction
 - The proximity weight ensures we focus on samples similar to the original instance
 
 **When to Use**:
@@ -154,18 +154,18 @@ SHAP provides theoretically grounded explanations based on **Shapley values** fr
 
 **Mathematical Formulation**:
 
-SHAP values are based on **Shapley values** from cooperative game theory. For a model \(f\) and instance \(x\), the SHAP value for feature \(i\) is:
+SHAP values are based on **Shapley values** from cooperative game theory. For a model $f$ and instance $x$, the SHAP value for feature $i$ is:
 
 $$
 \phi_i(f, x) = \sum_{S \subseteq F \setminus \{i\}} \frac{|S|! (|F| - |S| - 1)!}{|F|!} \left[ f(S \cup \{i\}) - f(S) \right]
 $$
 
 Where:
-- \(F\): Set of all features
-- \(S\): A subset of features (coalition)
-- \(f(S)\): Model prediction using only features in \(S\)
-- \(|S|\): Number of features in subset \(S\)
-- \(|F|\): Total number of features
+- $F$: Set of all features
+- $S$: A subset of features (coalition)
+- $f(S)$: Model prediction using only features in $S$
+- $|S|$: Number of features in subset $S$
+- $|F|$: Total number of features
 
 **Additivity Property**:
 
@@ -176,13 +176,13 @@ f(x) = \phi_0 + \sum_{i=1}^{M} \phi_i
 $$
 
 Where:
-- \(\phi_0\): Base value (expected model output)
-- \(\phi_i\): SHAP value for feature \(i\)
-- \(M\): Number of features
+- $\phi_0$: Base value (expected model output)
+- $\phi_i$: SHAP value for feature $i$
+- $M$: Number of features
 
 **Understanding the Formula**:
 
-1. **Marginal Contribution**: \(f(S \cup \{i\}) - f(S)\) measures how much feature \(i\) adds when included in coalition \(S\)
+1. **Marginal Contribution**: $f(S \cup \{i\}) - f(S)$ measures how much feature $i$ adds when included in coalition $S$
 2. **Weighted Average**: The formula averages marginal contributions across all possible coalitions
 3. **Fair Allocation**: Each feature gets credit proportional to its average contribution
 4. **Efficiency**: All SHAP values sum to the prediction minus the base value
