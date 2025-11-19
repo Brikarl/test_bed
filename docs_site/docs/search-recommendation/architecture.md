@@ -106,14 +106,14 @@ $$
 $$
 
 Where:
-- \(\text{TF}(t, d) = \frac{\text{count of term } t \text{ in document } d}{\text{total terms in document } d}\): Term frequency (normalized by document length)
-- \(\text{IDF}(t) = \log \frac{N}{df(t)}\): Inverse document frequency
-  - \(N\): Total number of documents
-  - $(df(t)\$): Number of documents containing term \(t\)
+- $\text{TF}(t, d) = \frac{\text{count of term } t \text{ in document } d}{\text{total terms in document } d}$: Term frequency (normalized by document length)
+- $\text{IDF}(t) = \log \frac{N}{df(t)}$: Inverse document frequency
+  - $N$: Total number of documents
+  - $df(t)$: Number of documents containing term $t$
 
 **Query-Document Score**:
 
-For a query \(q\) with terms \(\{t_1, t_2, ..., t_n\}\), the relevance score for document \(d\) is:
+For a query $q$ with terms $\{t_1, t_2, ..., t_n\}$, the relevance score for document $d$ is:
 
 $$
 \text{Score}(q, d) = \sum_{t \in q} \text{TF-IDF}(t, d)

@@ -70,10 +70,10 @@ graph LR
 
 **DPO Loss Function**:
 
-Given a preference pair $((x, y_w, y_l)\$) where:
-- \(x\) is the input prompt
-- \(y_w\) is the preferred (chosen) response
-- \(y_l\) is the rejected response
+Given a preference pair $(x, y_w, y_l)$ where:
+- $x$ is the input prompt
+- $y_w$ is the preferred (chosen) response
+- $y_l$ is the rejected response
 
 The DPO objective is:
 
@@ -82,18 +82,18 @@ $$
 $$
 
 **Symbol Definitions**:
-- \(\pi_\theta\): The model being trained (current policy)
-- \(\pi_{\text{ref}}\): The reference model (usually the SFT model)
-- \(\beta\): The temperature parameter (typically 0.1-0.5), controls how much the model can deviate from reference
-- \(\sigma\): The sigmoid function, converts log-odds to probability
+- $\pi_\theta$: The model being trained (current policy)
+- $\pi_{\text{ref}}$: The reference model (usually the SFT model)
+- $\beta$: The temperature parameter (typically 0.1-0.5), controls how much the model can deviate from reference
+- $\sigma$: The sigmoid function, converts log-odds to probability
 
 ### Understanding the Formula
 
 **What the Formula Does**:
 
 1. **Log Ratio Terms**: 
-   - \(\log \frac{\pi_\theta(y_w \mid x)}{\pi_{\text{ref}}(y_w \mid x)}\) measures how much more likely the current model is to generate the chosen response compared to the reference model
-   - \(\log \frac{\pi_\theta(y_l \mid x)}{\pi_{\text{ref}}(y_l \mid x)}\) measures the same for the rejected response
+   - $\log \frac{\pi_\theta(y_w \mid x)}{\pi_{\text{ref}}(y_w \mid x)}$ measures how much more likely the current model is to generate the chosen response compared to the reference model
+   - $\log \frac{\pi_\theta(y_l \mid x)}{\pi_{\text{ref}}(y_l \mid x)}$ measures the same for the rejected response
 
 2. **Preference Gap**:
    - The difference between these two log ratios represents the preference gap
@@ -110,7 +110,7 @@ $$
 **Intuitive Explanation**:
 - If chosen response becomes more likely and rejected becomes less likely → Loss decreases ✅
 - If both responses become equally likely → Loss increases ❌
-- If model deviates too far from reference → KL penalty (via \(\beta\)) prevents degradation
+- If model deviates too far from reference → KL penalty (via $\beta$) prevents degradation
 
 ---
 
