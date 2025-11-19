@@ -97,6 +97,34 @@ graph TB
 
 ### Inverted Index Component
 
+**TF-IDF Scoring Formula**:
+
+The system uses TF-IDF (Term Frequency-Inverse Document Frequency) to score document relevance:
+
+$$
+\text{TF-IDF}(t, d) = \text{TF}(t, d) \times \text{IDF}(t)
+$$
+
+Where:
+- \(\text{TF}(t, d) = \frac{\text{count of term } t \text{ in document } d}{\text{total terms in document } d}\): Term frequency (normalized by document length)
+- \(\text{IDF}(t) = \log \frac{N}{df(t)}\): Inverse document frequency
+  - \(N\): Total number of documents
+  - \(df(t)\): Number of documents containing term \(t\)
+
+**Query-Document Score**:
+
+For a query \(q\) with terms \(\{t_1, t_2, ..., t_n\}\), the relevance score for document \(d\) is:
+
+$$
+\text{Score}(q, d) = \sum_{t \in q} \text{TF-IDF}(t, d)
+$$
+
+**Intuitive Explanation**:
+- **TF (Term Frequency)**: Terms that appear more frequently in a document are more relevant
+- **IDF (Inverse Document Frequency)**: Rare terms across the corpus are more discriminative
+- **Combined**: TF-IDF balances local relevance (TF) with global discriminativeness (IDF)
+- **Query Matching**: Documents containing more query terms with higher TF-IDF scores rank higher
+
 **Core Data Structures**:
 
 ```python

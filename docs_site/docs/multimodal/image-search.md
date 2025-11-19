@@ -110,6 +110,37 @@ graph TB
 - **Embedding Dimension**: 512
 - **Similarity Metric**: Cosine similarity on normalized vectors
 
+**Training Objective**:
+
+CLIP is trained using **contrastive learning** to align image and text representations. Given a batch of \(N\) image-text pairs, CLIP learns to maximize the similarity of matching pairs while minimizing similarity of non-matching pairs.
+
+**Contrastive Loss Function**:
+
+For a batch of \(N\) image-text pairs \(\{(I_i, T_i)\}_{i=1}^{N}\), the symmetric contrastive loss is:
+
+$$
+\mathcal{L}_{\text{CLIP}} = -\frac{1}{2N} \sum_{i=1}^{N} \left[ \log \frac{\exp(\text{sim}(I_i, T_i) / \tau)}{\sum_{j=1}^{N} \exp(\text{sim}(I_i, T_j) / \tau)} + \log \frac{\exp(\text{sim}(T_i, I_i) / \tau)}{\sum_{j=1}^{N} \exp(\text{sim}(T_i, I_j) / \tau)} \right]
+$$
+
+Where:
+- \(I_i\): Image embedding for image \(i\)
+- \(T_i\): Text embedding for text \(i\)
+- \(\text{sim}(I, T)\): Cosine similarity between image and text embeddings
+- \(\tau\): Temperature parameter (typically 0.07), controls the sharpness of the distribution
+- \(N\): Batch size
+
+**Understanding the Formula**:
+
+1. **Image-to-Text Matching**: The first term encourages each image to be most similar to its paired text among all texts in the batch
+2. **Text-to-Image Matching**: The second term encourages each text to be most similar to its paired image among all images in the batch
+3. **Temperature Scaling**: The \(\tau\) parameter sharpens the probability distribution, making the model more confident in correct matches
+4. **Contrastive Learning**: By comparing against all other pairs in the batch, the model learns to distinguish matching from non-matching pairs
+
+**Intuitive Explanation**:
+- The model learns that "cat" should be closer to images of cats than to images of dogs
+- Through contrastive learning, it develops a shared understanding of visual and textual concepts
+- The shared embedding space enables zero-shot transfer to new tasks
+
 ### Why CLIP Works
 
 **Semantic Understanding**:
